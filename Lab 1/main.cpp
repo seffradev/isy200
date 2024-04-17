@@ -5,10 +5,10 @@ DigitalOut yellow(p20);
 DigitalOut green(p21);
 DigitalIn button(p23);
 
-    enum Mode {
-      GoToGreen,
-      GoToRed,
-    };
+enum Mode {
+  GoToGreen,
+  GoToRed,
+};
 
 Mode mode = GoToGreen;
 bool done = false;
@@ -28,12 +28,15 @@ int main() {
         mode = GoToGreen;
       }
     }
+
     if (done == false) { // Kollar tillstånd, köra sekvens eller ej samt vilken.
       if (mode == GoToGreen) {
         red = 1;
         yellow = 1;
         green = 0;
+
         wait(duration);
+
         red = 0;
         yellow = 0;
         green = 1;
@@ -41,11 +44,14 @@ int main() {
         red = 0;
         yellow = 1;
         green = 0;
+
         wait(duration);
+
         red = 1;
         yellow = 0;
         green = 0;
       }
+
       done = true;
     }
   }
