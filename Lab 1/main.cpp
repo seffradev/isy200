@@ -1,9 +1,9 @@
 #include "mbed.h"
 
-DigitalOut red(p18)
-DigitalOut yellow(p20)
-DigitalOut green(p21)
-DigitalIn button(p23)
+DigitalOut red(p18);
+DigitalOut yellow(p20);
+DigitalOut green(p21);
+DigitalIn button(p23);
 
     enum Mode {
       GoToGreen,
