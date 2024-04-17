@@ -1,4 +1,4 @@
-#include "m.bed.h"
+#include "mbed.h"
 
 DigitalOut red(p18)
 DigitalOut yellow(p20)
