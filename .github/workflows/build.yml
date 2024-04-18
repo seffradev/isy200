@@ -1,0 +1,21 @@
+name: Build
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: ghcr.io/armmbed/mbed-os-env
+    strategy:
+      fail-fast: false
+      matrix:
+        target_board:
+          - LPC1768
+        toolchain:
+          - GCC_ARM
+    steps:
+      - uses: actions/checkout@v4
+      - uses: OUXT-Polaris/build-mbed-app-action@master
+        with:
+          target_board: ${{ matrix.target_board }}
+          toolchain: ${{ matrix.toolchain }}
