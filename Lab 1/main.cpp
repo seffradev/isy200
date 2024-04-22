@@ -1,4 +1,6 @@
 #include "mbed.h"
+#include <chrono>
+#include <cstdint>
 
 DigitalOut red(p18);
 DigitalOut yellow(p20);
@@ -10,9 +12,9 @@ enum Mode {
   GoToRed,
 };
 
-Mode mode = GoToGreen;
-bool done = false;
-float duration = 2;
+Mode mode = GoToRed;
+bool done = true;
+std::chrono::duration<int> duration = 2s;
 
 int main() {
   red = 1;
@@ -35,7 +37,7 @@ int main() {
         yellow = 1;
         green = 0;
 
-        wait(duration);
+        ThisThread::sleep_for(duration);
 
         red = 0;
         yellow = 0;
@@ -45,7 +47,7 @@ int main() {
         yellow = 1;
         green = 0;
 
-        wait(duration);
+        ThisThread::sleep_for(duration);
 
         red = 1;
         yellow = 0;
