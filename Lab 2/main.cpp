@@ -94,6 +94,6 @@ int main() {
     int stepSize = (SERVO_MAX - SERVO_MIN) / (SERVO_SCALE * sweepTime);
     servo.pulsewidth_us(SERVO_MIN + stepSize * counter);
 
-    ThisThread::sleep_for(1);
+    ThisThread::sleep_for(1ms);
   }
 }
