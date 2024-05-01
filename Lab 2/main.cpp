@@ -92,7 +92,16 @@ int main() {
     counter += direction == Direction::Left ? -1 : 1;
 
     int stepSize = (SERVO_MAX - SERVO_MIN) / (SERVO_SCALE * sweepTime);
-    servo.pulsewidth_us(SERVO_MIN + stepSize * counter);
+    int pulseWidth = SERVO_MIN + stepSize * counter;
+    if (pulseWidth < SERVO_MIN) {
+      pulseWidth = SERVO_MIN;
+      counter = 0;
+    } else if (pulseWidth > SERVO_MAX) {
+      pulseWidth = SERVO_MAX;
+      counter = SERVO_SCALE * sweepTime;
+    }
+
+    servo.pulsewidth_us(pulseWidth);
 
     ThisThread::sleep_for(1ms);
   }
