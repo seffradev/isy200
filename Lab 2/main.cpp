@@ -7,6 +7,12 @@
 #define SERVO_SCALE 1
 #define LED_PERIOD 0.001
 #define LED_SCALE 0.1
+#define MIN_SWEEP_TIME 1000
+#define MAX_SWEEP_TIME 5000
+#define COLOR_MAX 255
+#define RED_MAX 0xC6
+#define GREEN_MAX 0x73
+#define BLUE_MAX 0xFF
 
 // Define pins for peripherals
 PwmOut servo(p21);
@@ -24,12 +30,12 @@ enum Direction { Left, Right };
 Direction direction = Direction::Right;
 int counter = 0;
 bool wiperActive = false;
-int sweepTime = 1000;
+int sweepTime = MIN_SWEEP_TIME;
 
 void setColour(int r, int g, int b) {
-  redLED = (1 - (float)r / 255) * LED_SCALE;
-  greenLED = (1 - (float)g / 255) * LED_SCALE;
-  blueLED = (1 - (float)b / 255) * LED_SCALE;
+  redLED = (1 - (float)r / COLOR_MAX) * LED_SCALE;
+  greenLED = (1 - (float)g / COLOR_MAX) * LED_SCALE;
+  blueLED = (1 - (float)b / COLOR_MAX) * LED_SCALE;
 }
 
 void setup() {
@@ -52,14 +58,15 @@ int main() {
   setup();
 
   while (true) {
-    // Convert range [0.0, 1.0] to [1000, 5000] milliseconds
-    sweepTime = 1000 + potentiometer * 4000;
+    // Convert range [0.0, 1.0] to [MIN_SWEEP_TIME, MAX_SWEEP_TIME] milliseconds
+    sweepTime =
+        MIN_SWEEP_TIME + (MAX_SWEEP_TIME - MIN_SWEEP_TIME) * potentiometer;
 
     if (wiperActive) {
       switch (direction) {
       case Direction::Left:
         if (counter == SERVO_SCALE * sweepTime) {
-          setColour(255, 255, 255);
+          setColour(RED_MAX, GREEN_MAX, BLUE_MAX);
           direction = Direction::Right;
         }
         break;
