@@ -1,108 +1,72 @@
 #include "mbed.h"
 #include <chrono>
 
-#define SERVO_MIN 900
-#define SERVO_MAX 2100
-#define SERVO_PERIOD 20
-#define SERVO_SCALE 1
-#define LED_PERIOD 0.001
-#define LED_SCALE 0.1
-#define MIN_SWEEP_TIME 1000
-#define MAX_SWEEP_TIME 5000
-#define COLOR_MAX 255
-#define RED_MAX 0xC6
-#define GREEN_MAX 0x73
-#define BLUE_MAX 0xFF
+#define MAX_TIME 5000.0
+#define MIN_TIME 1000.0
+#define SERVO_MAX 2500
+#define SERVO_MIN 500
+#define PERIOD 0.020
 
-// Define pins for peripherals
-PwmOut servo(p21);
-
-PwmOut redLED(p23);   // Red RGB LED
-PwmOut greenLED(p24); // Green RGB LED
-PwmOut blueLED(p25);  // Blue RGB LED
-
-AnalogIn potentiometer(p20);
 DigitalIn joystickUp(p15);
 DigitalIn joystickDown(p12);
 
-enum Direction { Left, Right };
+PwmOut servo (p21);
 
-Direction direction = Direction::Right;
-int counter = 0;
-bool wiperActive = false;
-int sweepTime = MIN_SWEEP_TIME;
+PwmOut r (p23);
+PwmOut g (p24);
+PwmOut b (p25);
 
-void setColour(int r, int g, int b) {
-  redLED = (1 - (float)r / COLOR_MAX) * LED_SCALE;
-  greenLED = (1 - (float)g / COLOR_MAX) * LED_SCALE;
-  blueLED = (1 - (float)b / COLOR_MAX) * LED_SCALE;
+AnalogIn potentiometer(p19);
+
+bool active = false;
+bool keepGoing = false;
+bool led = false;
+double delta = 0;
+double pulsewidth = SERVO_MAX;
+
+double clamp(double value, double min, double max) {
+    if (value < min)
+        return min;
+    else if(value > max)
+        return max;
+    return value;
 }
 
-void setup() {
-  // Standard servo period
-  servo.period_ms(SERVO_PERIOD);
+int main()
+{
+    servo.period(PERIOD);
+    servo.pulsewidth_us(pulsewidth);
+    r.period(PERIOD);
+    r = g = b = 1;
 
-  // Servo starts at the far right position
-  servo.pulsewidth_us(SERVO_MAX);
+    while(true) {
+        delta = (SERVO_MAX - SERVO_MIN) / (MIN_TIME + (MAX_TIME - MIN_TIME) * potentiometer) * (active ? -1 : 1);
 
-  // High frequency to control brightness via duty cycle
-  redLED.period(LED_PERIOD);
-  greenLED.period(LED_PERIOD);
-  blueLED.period(LED_PERIOD);
-
-  // Start with LED off
-  setColour(0, 0, 0);
-}
-
-int main() {
-  setup();
-
-  while (true) {
-    // Convert range [0.0, 1.0] to [MIN_SWEEP_TIME, MAX_SWEEP_TIME] milliseconds
-    sweepTime =
-        MIN_SWEEP_TIME + (MAX_SWEEP_TIME - MIN_SWEEP_TIME) * potentiometer;
-
-    if (wiperActive) {
-      switch (direction) {
-      case Direction::Left:
-        if (counter == SERVO_SCALE * sweepTime) {
-          setColour(RED_MAX, GREEN_MAX, BLUE_MAX);
-          direction = Direction::Right;
+        if (pulsewidth < SERVO_MIN){
+            active = false;
         }
-        break;
-      case Direction::Right:
-        if (counter == SERVO_SCALE * sweepTime) {
-          setColour(0, 0, 0);
-          direction = Direction::Left;
+
+        if (keepGoing && pulsewidth > SERVO_MAX) {
+            active = true;
         }
-        break;
-      }
-    } else {
-      setColour(0, 0, 0);
-      direction = Direction::Right;
+
+        if(joystickUp==1) {
+            keepGoing = true;
+        }
+
+        if(joystickDown==1) {
+            keepGoing = false;
+        }
+
+        pulsewidth = clamp(pulsewidth, SERVO_MIN, SERVO_MAX);
+        pulsewidth += delta;
+        led = active;
+
+        r = 1 - 0.05 * (int)led;
+        g = 1 - 0.05 * (int)led;
+        b = 1 - 0.05 * (int)led;
+
+        servo.pulsewidth_us(pulsewidth);
+        ThisThread::sleep_for(1ms);
     }
-
-    if (joystickUp) {
-      wiperActive = true;
-    }
-    if (joystickDown) {
-      wiperActive = false;
-    }
-
-    counter += direction == Direction::Left ? -1 : 1;
-
-    int stepSize = (SERVO_MAX - SERVO_MIN) / (SERVO_SCALE * sweepTime);
-    int pulseWidth = SERVO_MIN + stepSize * counter;
-    if (pulseWidth < SERVO_MIN) {
-      pulseWidth = SERVO_MIN;
-      counter = 0;
-    } else if (pulseWidth > SERVO_MAX) {
-      pulseWidth = SERVO_MAX;
-      counter = SERVO_SCALE * sweepTime;
-    }
-
-    servo.pulsewidth_us(pulseWidth);
-
-    ThisThread::sleep_for(1ms);
-  }
 }
