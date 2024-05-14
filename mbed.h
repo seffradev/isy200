@@ -114,4 +114,18 @@ public:
   friend bool operator&&(bool lhs, DigitalOut &rhs);
   friend bool operator&&(DigitalOut &lhs, DigitalOut &rhs);
   friend bool operator||(DigitalOut &lhs, bool rhs);
+  friend bool operator!(DigitalOut &lhs);
+};
+
+class BufferedSerial {
+public:
+  BufferedSerial(int, int, int);
+  void set_format(int, int, int);
+  void write(char* buffer, int size);
+  char* read(char* buffer, int size);
+
+  bool writable();
+  bool readable();
+
+  static const int None = 0;
 };
