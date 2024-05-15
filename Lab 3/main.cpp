@@ -1,10 +1,10 @@
 #include "mbed.h"
 #include <chrono>
 
-#define PAUSE 1ms
+#define PAUSE 100ms
 #define LEFT 0x0F
 #define RIGHT 0xF0
-#define RATE 20
+#define RATE 3
 #define MAX 1000000
 #define BAUD 9600
 #define SIZE 1
@@ -13,7 +13,7 @@ DigitalIn btnleft(p21);
 DigitalIn btnright(p22);
 
 DigitalOut ledleft(p24);
-DigitalOut ledright(p25);
+DigitalOut ledright(p20);
 
 BufferedSerial port(p28, p27, BAUD);
 
@@ -61,6 +61,7 @@ int main()
         {
             ledleft = 0;
         } // Trycks inte knappen ner dör lampan.
+        
         if (received & RIGHT)
         { // Kollar så att det finns 1:a i högerlampans del
             if (counter % RATE == 0)
