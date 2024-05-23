@@ -1,8 +1,7 @@
-#include "C12832.h"
-#include "debug.h"
 #include "mbed.h"
-#include <chrono>
-#include <stdio.h>
+#include "C12832/C12832.h"
+
+using namespace std;
 
 #define MAX 300
 #define MIN 20
@@ -10,32 +9,31 @@
 #define TONE 1.0 / 440
 #define INTENSITY 0.5
 #define DURATION 100ms
-
-BufferedSerial pc(USBTX, USBRX);
-InterruptIn up_button(p15);
-InterruptIn down_button(p12);
-DigitalOut redled(p23); // displays the metronome beat
-DigitalOut blueled(p25);
-DigitalOut greenled(p24);
-Ticker beat_rate; // define a Ticker, with name “beat_rate”
-Ticker up_debouncer;
-Ticker down_debouncer;
-C12832 lcd(p5, p7, p6, p8, p11);
-PwmOut spkr(p26);
+#define BAUD 9600
+#define PERIOD 500ms
 
 void beat();
 void raise_beat();
 void lower_beat();
 void enable_up_interrupt();
 void enable_down_interrupt();
+void update_lcd();
 
-// metronome period in seconds, inital value 0.5
+BufferedSerial pc(USBTX, USBRX, BAUD);
+InterruptIn up_button(p15);
+InterruptIn down_button(p12);
+DigitalOut redled(p23);
+DigitalOut blueled(p25);
+DigitalOut greenled(p24);
+Ticker beat_rate;
+Ticker up_debouncer;
+Ticker down_debouncer;
+C12832 lcd(p5, p7, p6, p8, p11);
+PwmOut spkr(p26);
 std::chrono::milliseconds period = 500ms;
-
-int rate(120); // metronome rate, initial value 120
+int rate(120);
 
 int main() {
-
   up_button.rise(&raise_beat);
   down_button.rise(&lower_beat);
   greenled = 1;
@@ -48,7 +46,7 @@ int main() {
   pc.write("mbed metronome!\r\n", 17);
   pc.write("_______________\r\n", 17);
 
-  period = 1;
+  period = PERIOD;
   redled = 1; // diagnostic
 
   ThisThread::sleep_for(100ms);
@@ -62,10 +60,9 @@ int main() {
   lcd.printf("Metronome");
 
   while (1) {
+    period = 60s / rate; // calculate the beat period
 
-    period = 60 / rate; // calculate the beat period
-
-    pc.write("metronome rate is %i\r", rate);
+    pc.write("metronome rate is %i\j", rate);
     // pc.printf("metronome period is %f\r\n", period); //optional check
 
     lcd.locate(0, 15);
@@ -116,4 +113,7 @@ void lower_beat() {
 
   down_button.disable_irq();
   down_debouncer.attach(&enable_down_interrupt, DURATION);
+}
+
+void update_lcd(){
 }
