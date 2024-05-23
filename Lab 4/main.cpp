@@ -88,12 +88,12 @@ void beat() { // this is the metronome beat
   }
 }
 
-void enable_up_interrupt(){
+void enable_up_interrupt() {
   up_debouncer.detach();
   up_button.enable_irq();
 }
 
-void enable_down_interrupt(){
+void enable_down_interrupt() {
   down_debouncer.detach();
   down_button.enable_irq();
 }
@@ -103,7 +103,7 @@ void raise_beat() {
 
   if (rate > MAX)
     rate = MAX;
-  
+
   up_button.disable_irq();
   up_debouncer.attach(&enable_up_interrupt, DURATION);
 }
