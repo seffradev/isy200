@@ -1,5 +1,7 @@
-#include "mbed.h"
 #include "C12832/C12832.h"
+#include "mbed.h"
+#include <chrono>
+#include <string>
 
 using namespace std;
 
@@ -11,6 +13,7 @@ using namespace std;
 #define DURATION 100ms
 #define BAUD 9600
 #define PERIOD 500ms
+#define DEBOUNCE_DURATION 200ms
 
 void beat();
 void raise_beat();
@@ -18,6 +21,8 @@ void lower_beat();
 void enable_up_interrupt();
 void enable_down_interrupt();
 void update_lcd();
+void write_rate(int rate);
+void print(std::string input);
 
 BufferedSerial pc(USBTX, USBRX, BAUD);
 InterruptIn up_button(p15);
@@ -26,10 +31,9 @@ DigitalOut redled(p23);
 DigitalOut blueled(p25);
 DigitalOut greenled(p24);
 Ticker beat_rate;
-Ticker up_debouncer;
-Ticker down_debouncer;
+Timer debouncer;
 C12832 lcd(p5, p7, p6, p8, p11);
-PwmOut spkr(p26);
+PwmOut speaker(p26);
 std::chrono::milliseconds period = 500ms;
 int rate(120);
 
@@ -39,81 +43,74 @@ int main() {
   greenled = 1;
   blueled = 1;
   redled = 0;
-  spkr.period(TONE);
-  spkr = INTENSITY;
+  speaker.period(TONE);
+  speaker = INTENSITY;
+  debouncer.start();
 
-  pc.write("\r\n", 2);
-  pc.write("mbed metronome!\r\n", 17);
-  pc.write("_______________\r\n", 17);
+  print("\r\n");
+  print("mbed metronome!\r\n");
+  print("_______________\r\n");
 
   period = PERIOD;
-  redled = 1; // diagnostic
+  redled = 1;
 
-  ThisThread::sleep_for(100ms);
+  beat_rate.attach(&beat, period);
 
-  beat_rate.attach(&beat, period); // initialises the beat rate
-
-  // main loop checks buttons, updates rates and displays
-  int j = 0;
   lcd.cls();
   lcd.locate(0, 3);
   lcd.printf("Metronome");
 
   while (1) {
-    period = 60s / rate; // calculate the beat period
-
-    pc.write("metronome rate is %i\j", rate);
-    // pc.printf("metronome period is %f\r\n", period); //optional check
-
-    lcd.locate(0, 15);
-    lcd.printf("%d bpm", j);
-    j++;
-
-    ThisThread::sleep_for(500ms);
+    ThisThread::sleep_for(100ms);
   }
 }
 
-void beat() { // this is the metronome beat
+void beat() {
   beat_rate.attach(&beat, period);
   redled = !redled;
 
-  if (spkr) {
-    spkr = 0;
-
+  if (speaker) {
+    speaker = 0;
   } else {
-    spkr = INTENSITY;
+    speaker = INTENSITY;
   }
 }
 
-void enable_up_interrupt() {
-  up_debouncer.detach();
-  up_button.enable_irq();
-}
-
-void enable_down_interrupt() {
-  down_debouncer.detach();
-  down_button.enable_irq();
-}
-
 void raise_beat() {
-  rate += STEP;
+  if (std::chrono::duration_cast<std::chrono::milliseconds>(
+          debouncer.elapsed_time()) > DEBOUNCE_DURATION) {
+    debouncer.reset();
+    rate += STEP;
 
-  if (rate > MAX)
-    rate = MAX;
+    if (rate > MAX)
+      rate = MAX;
 
-  up_button.disable_irq();
-  up_debouncer.attach(&enable_up_interrupt, DURATION);
+    period = 60s / rate;
+    write_rate(rate);
+  }
 }
 
 void lower_beat() {
-  rate -= STEP;
+  if (std::chrono::duration_cast<std::chrono::milliseconds>(
+          debouncer.elapsed_time()) > DEBOUNCE_DURATION) {
+    debouncer.reset();
+    rate -= STEP;
 
-  if (rate < MIN)
-    rate = MIN;
+    if (rate < MIN)
+      rate = MIN;
 
-  down_button.disable_irq();
-  down_debouncer.attach(&enable_down_interrupt, DURATION);
+    period = 60s / rate;
+    write_rate(rate);
+  }
+}
+void update_lcd() {
+  lcd.locate(0, 15);
+  lcd.printf("%d bpm", rate);
 }
 
-void update_lcd(){
+void write_rate(int rate) {
+  std::string rate_str = std::to_string(rate);
+  print("metronome rate is " + rate_str + "\n");
 }
+
+void print(std::string input) { pc.write(input.c_str(), input.length()); }
